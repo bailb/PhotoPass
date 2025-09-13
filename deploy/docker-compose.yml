@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  # H5 Web Application
+  photopass-h5:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.h5
+    container_name: photopass-h5
+    ports:
+      - "3000:80"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    networks:
+      - photopass-network
+
+  # WeChat Mini Program
+  photopass-miniprogram:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.miniprogram
+    container_name: photopass-miniprogram
+    ports:
+      - "3001:80"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    networks:
+      - photopass-network
+
+networks:
+  photopass-network:
+    driver: bridge
+
+volumes:
+  photopass-data:
+    driver: local

@@ -1,0 +1,689 @@
+/* 上传区域样式 */
+.upload-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 80vh;
+}
+
+.upload-icon {
+  font-size: 80rpx;
+  text-align: center;
+  margin-bottom: 20rpx;
+}
+
+.upload-title {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #333;
+  text-align: center;
+  margin-bottom: 10rpx;
+}
+
+.upload-desc {
+  font-size: 24rpx;
+  color: #666;
+  text-align: center;
+  margin-bottom: 40rpx;
+}
+
+.upload-btn {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border: none;
+  border-radius: 16rpx;
+  padding: 40rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20rpx;
+  width: 100%;
+}
+
+.upload-icon-large {
+  font-size: 60rpx;
+}
+
+.upload-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.upload-text-main {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: white;
+}
+
+.upload-text-sub {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* 裁剪区域样式 */
+.cropper-section {
+  margin-top: 20rpx;
+}
+
+.card-header {
+  text-align: center;
+  margin-bottom: 30rpx;
+}
+
+.card-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8rpx;
+}
+
+.card-desc {
+  font-size: 24rpx;
+  color: #666;
+}
+
+.main-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 30rpx;
+}
+
+.image-area {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+  /* 🎯 新增：外层容器边框 */
+  border: 2rpx solid #d0d0d0;
+  border-radius: 16rpx;
+  padding: 20rpx;
+  background: #f8f8f8;
+  /* 🎯 新增：让内容居中 */
+  align-items: center;
+}
+
+.cropper-container {
+  background: white;
+  border-radius: 12rpx;
+  padding: 0rpx; /* 🎯 移除padding，让图片贴边 */
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden; /* 🎯 修复：隐藏超出边界的图片部分 */
+  /* 🎯 确保容器尺寸与图片尺寸匹配 */
+  width: 500rpx; /* 直接使用图片尺寸 */
+  height: 500rpx; /* 直接使用图片尺寸 */
+  /* 🎯 新增：添加边框美化画布 */
+  border: 2rpx solid #e0e0e0;
+}
+
+.cropper-image {
+  width: 500rpx;
+  height: 500rpx;
+  border-radius: 10rpx; /* 🎯 调整圆角与容器协调 */
+  transition: transform 0.3s ease;
+  transform-origin: center center;
+}
+
+/* 裁剪框样式 */
+.crop-frame {
+  position: absolute;
+  top: 0rpx; /* 🎯 移除偏移，直接贴边 */
+  left: 0rpx; /* 🎯 移除偏移，直接贴边 */
+  width: 100%; /* 🎯 直接使用100% */
+  height: 100%; /* 🎯 直接使用100% */
+  pointer-events: auto;
+  z-index: 10;
+  overflow: visible;
+}
+
+
+.crop-overlay {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.crop-border {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border: 4rpx dashed #667eea;
+  border-radius: 8rpx;
+  background: rgba(102, 126, 234, 0.2);
+  box-shadow: 0 0 20rpx rgba(102, 126, 234, 0.8);
+  transition: all 0.3s ease;
+  cursor: move;
+  user-select: none;
+  pointer-events: auto;
+  z-index: 999;
+}
+
+.crop-border.dragging {
+  border-color: #ff6b6b;
+  box-shadow: 0 0 30rpx rgba(255, 107, 107, 0.7);
+  transform: scale(1.02);
+}
+
+/* 辅助线样式 */
+.crop-guide-line {
+  position: absolute;
+  background: rgba(102, 126, 234, 0.6);
+  pointer-events: none;
+}
+
+/* 测试标记样式 */
+.test-marker {
+  position: absolute;
+  width: 8rpx;
+  height: 8rpx;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 20;
+}
+
+/* 垂直辅助线 */
+.crop-guide-vertical-1 {
+  left: 33.33%;
+  top: 0;
+  width: 1rpx;
+  height: 100%;
+}
+
+.crop-guide-vertical-2 {
+  left: 66.67%;
+  top: 0;
+  width: 1rpx;
+  height: 100%;
+}
+
+/* 水平辅助线 */
+.crop-guide-horizontal-1 {
+  left: 0;
+  top: 33.33%;
+  width: 100%;
+  height: 1rpx;
+}
+
+.crop-guide-horizontal-2 {
+  left: 0;
+  top: 66.67%;
+  width: 100%;
+  height: 1rpx;
+}
+
+/* 四周透明按钮样式 */
+.crop-btn {
+  position: absolute;
+  background: transparent !important;
+  border: 1rpx solid rgba(102, 126, 234, 0.3);
+  color: #667eea;
+  font-size: 18rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: none;
+  transition: all 0.3s ease;
+  z-index: 1000;
+  box-sizing: border-box;
+  padding: 0 !important;
+  margin: 0 !important;
+  line-height: 1 !important;
+}
+
+.crop-btn:active {
+  background: rgba(102, 126, 234, 0.25);
+  transform: scale(0.95);
+}
+
+/* 上下按钮 - 长方形 */
+.crop-btn-up {
+  top: -1rpx;
+  left: 50%;
+  width: 60rpx !important;
+  height: 20rpx !important;
+  min-width: 60rpx !important;
+  max-width: 60rpx !important;
+  border-radius: 0 0 10rpx 10rpx;
+  transform: translateX(-50%);
+  box-sizing: border-box;
+}
+
+.crop-btn-down {
+  bottom: -1rpx;
+  left: 50%;
+  width: 60rpx !important;
+  height: 20rpx !important;
+  min-width: 60rpx !important;
+  max-width: 60rpx !important;
+  border-radius: 10rpx 10rpx 0 0;
+  transform: translateX(-50%);
+  box-sizing: border-box;
+}
+
+/* 左右按钮 - 竖着长的长方形 */
+.crop-btn-left {
+  left: -1rpx;
+  top: 50%;
+  width: 20rpx !important;
+  height: 60rpx !important;
+  min-width: 20rpx !important;
+  max-width: 20rpx !important;
+  border-radius: 0 10rpx 10rpx 0;
+  transform: translateY(-50%);
+  box-sizing: border-box;
+}
+
+.crop-btn-right {
+  right: -1rpx;
+  top: 50%;
+  width: 20rpx !important;
+  height: 60rpx !important;
+  min-width: 20rpx !important;
+  max-width: 20rpx !important;
+  border-radius: 10rpx 0 0 10rpx;
+  transform: translateY(-50%);
+  box-sizing: border-box;
+}
+
+
+/* Canvas样式 */
+.crop-canvas {
+  position: absolute;
+  top: 20rpx;
+  left: 20rpx;
+  /* 尺寸由JavaScript动态设置 */
+  opacity: 0;
+  pointer-events: none;
+  border-radius: 8rpx;
+  /* 确保Canvas尺寸不被CSS影响 */
+  max-width: none !important;
+  max-height: none !important;
+  min-width: auto !important;
+  min-height: auto !important;
+}
+
+.preview-section {
+  background: white;
+  border-radius: 12rpx;
+  padding: 20rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
+  /* 🎯 修复：确保生成图片不被压缩 */
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.preview-image {
+  position: relative;
+  margin-bottom: 20rpx;
+}
+
+.preview-img {
+  width: 100%;
+  height: 200rpx;
+  border-radius: 8rpx;
+  /* 🎯 修复：确保生成图片有合适的尺寸 */
+  min-height: 200rpx;
+  object-fit: contain;
+}
+
+.image-overlay {
+  position: absolute;
+  top: 10rpx;
+  right: 10rpx;
+  display: flex;
+  gap: 8rpx;
+}
+
+.quality-badge, .format-badge {
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 4rpx 8rpx;
+  border-radius: 4rpx;
+  font-size: 20rpx;
+}
+
+.preview-actions {
+  display: flex;
+  gap: 16rpx;
+}
+
+.preview-actions button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+}
+
+/* 底部操作按钮样式 */
+.bottom-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+  margin-top: 20rpx;
+}
+
+.generate-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  padding: 24rpx;
+  font-size: 28rpx;
+}
+
+.generate-btn[disabled] {
+  opacity: 0.5;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 16rpx;
+}
+
+.action-buttons button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  padding: 20rpx;
+}
+
+.reset-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  padding: 20rpx;
+}
+
+/* 控制面板样式 */
+.control-panel {
+  background: white;
+  border-radius: 12rpx;
+  padding: 30rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
+}
+
+.section-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 20rpx;
+}
+
+.selected-size-info {
+  background: rgba(102, 126, 234, 0.1);
+  border: 1rpx solid rgba(102, 126, 234, 0.2);
+  border-radius: 8rpx;
+  padding: 16rpx;
+  margin-bottom: 20rpx;
+}
+
+.selected-badge {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  font-size: 24rpx;
+  color: #667eea;
+  margin-bottom: 8rpx;
+}
+
+.selected-icon {
+  font-size: 20rpx;
+}
+
+.size-info {
+  font-size: 20rpx;
+  color: #666;
+}
+
+.size-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-bottom: 30rpx;
+}
+
+.size-btn {
+  background: white;
+  border: 2rpx solid #e8ecf7;
+  border-radius: 8rpx;
+  padding: 16rpx 24rpx;
+  font-size: 24rpx;
+  color: #333;
+  flex: 1;
+  min-width: 80rpx;
+}
+
+.size-btn.active {
+  background: #667eea;
+  border-color: #667eea;
+  color: white;
+}
+
+.custom-size-section {
+  margin-bottom: 30rpx;
+}
+
+.custom-title {
+  font-size: 24rpx;
+  color: #666;
+  margin-bottom: 16rpx;
+}
+
+.custom-btn {
+  background: white;
+  border: 2rpx solid #e8ecf7;
+  border-radius: 8rpx;
+  padding: 16rpx 24rpx;
+  font-size: 24rpx;
+  color: #333;
+  width: 100%;
+}
+
+.custom-btn.active {
+  background: #667eea;
+  border-color: #667eea;
+  color: white;
+}
+
+/* 🎯 新增：单位选择器样式 */
+.unit-selector {
+  margin-bottom: 16rpx;
+}
+
+.unit-picker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: white;
+  border: 2rpx solid #e8ecf7;
+  border-radius: 8rpx;
+  padding: 16rpx 20rpx;
+  font-size: 24rpx;
+  color: #333;
+}
+
+.unit-text {
+  flex: 1;
+}
+
+.unit-arrow {
+  color: #999;
+  font-size: 20rpx;
+}
+
+/* 🎯 新增：输入组样式 */
+.input-group {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 16rpx;
+}
+
+.input {
+  flex: 1;
+  background: white;
+  border: 2rpx solid #e8ecf7;
+  border-radius: 8rpx;
+  padding: 16rpx 20rpx;
+  font-size: 24rpx;
+  color: #333;
+  text-align: center;
+}
+
+.input-separator {
+  font-size: 24rpx;
+  color: #666;
+  font-weight: bold;
+}
+
+.unit-label {
+  font-size: 20rpx;
+  color: #999;
+  min-width: 40rpx;
+  text-align: center;
+}
+
+
+.btn-icon {
+  font-size: 24rpx;
+}
+
+/* 控制按钮样式 */
+.control-buttons {
+  margin-top: 30rpx;
+}
+
+.control-group {
+  margin-bottom: 20rpx;
+}
+
+.control-title {
+  display: block;
+  font-size: 24rpx;
+  color: #666;
+  text-align: center;
+  margin-bottom: 12rpx;
+}
+
+
+.scale-buttons {
+  display: flex;
+  gap: 12rpx;
+  justify-content: center;
+}
+
+.scale-btn {
+  padding: 12rpx 20rpx;
+  border-radius: 8rpx;
+  border: 2rpx solid #e8ecf7;
+  background: white;
+  color: #333;
+  font-size: 22rpx;
+  font-weight: 600;
+  min-width: 80rpx;
+}
+
+.scale-btn.zoom-in {
+  background: #52c41a;
+  border-color: #52c41a;
+  color: white;
+}
+
+.scale-btn.zoom-out {
+  background: #ff4d4f;
+  border-color: #ff4d4f;
+  color: white;
+}
+
+.scale-btn.reset {
+  background: #faad14;
+  border-color: #faad14;
+  color: white;
+}
+
+/* 调试信息样式 */
+
+/* 水平比例尺样式 */
+.scale-ruler-container {
+  margin-top: 20rpx;
+  padding: 0 20rpx;
+  /* 🎯 修复：确保缩放比例尺不被压缩 */
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.scale-ruler {
+  background: white;
+  border-radius: 12rpx;
+  padding: 20rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
+  /* 🎯 修复：确保缩放比例尺有足够宽度 */
+  min-width: 400rpx;
+}
+
+.scale-track {
+  position: relative;
+  height: 60rpx;
+  background: linear-gradient(to right, #ff4d4f, #faad14, #52c41a);
+  border-radius: 30rpx;
+  margin-bottom: 16rpx;
+}
+
+.scale-handle {
+  position: absolute;
+  top: -10rpx;
+  width: 40rpx;
+  height: 40rpx;
+  background: white;
+  border: 4rpx solid #667eea;
+  border-radius: 50%;
+  box-shadow: 0 4rpx 12rpx rgba(102, 126, 234, 0.3);
+  cursor: pointer;
+  transform: translateX(-50%);
+}
+
+.scale-mark {
+  position: absolute;
+  top: 70rpx;
+  font-size: 20rpx;
+  color: #666;
+  font-weight: 600;
+}
+
+.scale-mark-left {
+  left: 0;
+}
+
+.scale-mark-center {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.scale-mark-right {
+  right: 0;
+}
+
+.scale-info {
+  text-align: center;
+}
+
+.scale-current {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #667eea;
+}
+
+
+
+.crop-position {
+  display: block;
+  font-size: 16rpx;
+  opacity: 0.7;
+  margin-top: 4rpx;
+}

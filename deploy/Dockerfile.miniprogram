@@ -1,0 +1,32 @@
+# WeChat Mini Program Dockerfile for PhotoPass
+FROM node:18-alpine AS builder
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci --only=production
+
+# Copy source code
+COPY . .
+
+# Build the mini program
+RUN npm run build:mp-weixin
+
+# Production stage
+FROM nginx:alpine
+
+# Copy built files to nginx
+COPY --from=builder /app/dist/mp-weixin /usr/share/nginx/html
+
+# Copy nginx configuration for mini program
+COPY deploy/nginx-miniprogram.conf /etc/nginx/conf.d/default.conf
+
+# Expose port
+EXPOSE 80
+
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]

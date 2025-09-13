@@ -1,0 +1,219 @@
+<view class="container">
+  <!-- 上传区域 -->
+  <view class="upload-section" wx:if="{{!imageUrl}}">
+    <view class="card">
+      <view class="upload-icon">📁</view>
+      <view class="upload-title">上传您的照片</view>
+      <view class="upload-desc">支持 JPG、PNG 格式</view>
+      
+      <button class="upload-btn" bindtap="chooseImage">
+        <view class="upload-icon-large">⬆️</view>
+        <view class="upload-text">
+          <text class="upload-text-main">点击选择照片</text>
+          <text class="upload-text-sub">或从相册选择</text>
+        </view>
+      </button>
+    </view>
+  </view>
+
+  <!-- 裁剪区域 -->
+  <view class="cropper-section" wx:if="{{imageUrl}}">
+    <view class="card">
+      <view class="card-header">
+        <view class="card-title">📐 调整裁剪区域</view>
+        <view class="card-desc">选择证件照尺寸并生成</view>
+      </view>
+      
+      <view class="main-workspace">
+        <!-- 图片区域 -->
+        <view class="image-area">
+          <view class="cropper-container">
+            <image 
+              class="cropper-image" 
+              src="{{imageUrl}}" 
+              mode="aspectFit"
+              bindload="onImageLoad"
+              style="transform: scale({{imageScale}});"
+            />
+            
+            
+            <!-- 裁剪框 -->
+            <view class="crop-frame" wx:if="{{selectedSize}}">
+              <view class="crop-overlay">
+                
+                <view 
+                  class="crop-border {{isDragging ? 'dragging' : ''}}"
+                  style="left: {{cropFrameX}}rpx; top: {{cropFrameY}}rpx; width: {{cropFrameWidth}}rpx; height: {{cropFrameHeight}}rpx;"
+                  bindtouchstart="onTouchStart"
+                  bindtouchmove="onTouchMove"
+                  bindtouchend="onTouchEnd"
+                >
+                  <!-- 辅助线 -->
+                  <view class="crop-guide-line crop-guide-vertical-1"></view>
+                  <view class="crop-guide-line crop-guide-vertical-2"></view>
+                  <view class="crop-guide-line crop-guide-horizontal-1"></view>
+                  <view class="crop-guide-line crop-guide-horizontal-2"></view>
+                </view>
+                
+                <!-- 四周透明按钮 -->
+                <button class="crop-btn crop-btn-up" bindtap="moveCropFrame" data-direction="up">⬆️</button>
+                <button class="crop-btn crop-btn-down" bindtap="moveCropFrame" data-direction="down">⬇️</button>
+                <button class="crop-btn crop-btn-left" bindtap="moveCropFrame" data-direction="left">⬅️</button>
+                <button class="crop-btn crop-btn-right" bindtap="moveCropFrame" data-direction="right">➡️</button>
+                
+              </view>
+            </view>
+          </view>
+          
+          <!-- 调试信息 -->
+          
+          <!-- 水平比例尺 -->
+          <view class="scale-ruler-container" wx:if="{{imageUrl}}">
+            <view class="scale-ruler">
+              <view class="scale-track">
+                <view class="scale-handle" 
+                      style="left: {{scaleHandlePosition}}px;"
+                      bindtouchstart="onScaleStart"
+                      bindtouchmove="onScaleMove"
+                      bindtouchend="onScaleEnd">
+                </view>
+                <view class="scale-mark scale-mark-left">0.5</view>
+                <view class="scale-mark scale-mark-center">1.0</view>
+                <view class="scale-mark scale-mark-right">3.0</view>
+              </view>
+              <view class="scale-info">
+                <text class="scale-current">{{imageScale.toFixed(1)}}x</text>
+              </view>
+            </view>
+          </view>
+          
+          <!-- Canvas用于裁剪 -->
+          <canvas 
+            canvas-id="cropCanvas" 
+            class="crop-canvas"
+            style="width: {{selectedSize.width}}px; height: {{selectedSize.height}}px;"
+            wx:if="{{selectedSize}}"
+            disable-scroll="true"
+          ></canvas>
+          
+          <!-- 预览区域 -->
+          <view class="preview-section" wx:if="{{generatedPhoto}}">
+            <view class="preview-image">
+              <image class="preview-img" src="{{generatedPhoto}}" mode="aspectFit" />
+              <view class="image-overlay">
+                <view class="quality-badge">高清</view>
+                <view class="format-badge">PNG</view>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <!-- 控制面板 -->
+        <view class="control-panel">
+          <view class="size-selection">
+            <view class="section-title">选择证件照尺寸</view>
+            
+            <view class="selected-size-info" wx:if="{{selectedSize}}">
+              <view class="selected-badge">
+                <text class="selected-icon">🔒</text>
+                <text>已锁定 {{selectedSize.name}} 比例</text>
+              </view>
+              <view class="size-info">{{selectedSize.width}}×{{selectedSize.height}}px</view>
+            </view>
+            
+            <view class="size-buttons">
+              <button 
+                wx:for="{{photoSizes}}" 
+                wx:key="name"
+                class="size-btn {{selectedSize && selectedSize.name === item.name ? 'active' : ''}}"
+                bindtap="selectSize"
+                data-size="{{item}}"
+              >
+                {{item.name}}
+              </button>
+            </view>
+            
+            <!-- 自定义尺寸 -->
+            <view class="custom-size-section">
+              <view class="custom-title">自定义尺寸</view>
+              
+              <!-- 单位选择器 -->
+              <view class="unit-selector">
+                <picker 
+                  mode="selector" 
+                  range="{{['像素', '英寸', '厘米']}}"
+                  value="{{customUnit === 'px' ? 0 : customUnit === 'inch' ? 1 : 2}}"
+                  bindchange="onCustomUnitChange"
+                >
+                  <view class="unit-picker">
+                    <text class="unit-text">{{customUnit === 'px' ? '像素' : customUnit === 'inch' ? '英寸' : '厘米'}}</text>
+                    <text class="unit-arrow">▼</text>
+                  </view>
+                </picker>
+              </view>
+              
+              <view class="input-group">
+                <input 
+                  class="input" 
+                  type="digit" 
+                  placeholder="宽度" 
+                  value="{{customWidth}}"
+                  bindinput="onCustomWidthInput"
+                />
+                <text class="input-separator">×</text>
+                <input 
+                  class="input" 
+                  type="digit" 
+                  placeholder="高度" 
+                  value="{{customHeight}}"
+                  bindinput="onCustomHeightInput"
+                />
+                <text class="unit-label">{{customUnit}}</text>
+              </view>
+              <button 
+                class="custom-btn {{selectedSize && selectedSize.name.indexOf('自定义') === 0 ? 'active' : ''}}"
+                bindtap="useCustomSize"
+              >
+                使用自定义
+              </button>
+            </view>
+          </view>
+        </view>
+
+        <!-- 底部操作按钮 -->
+        <view class="bottom-actions">
+          <button 
+            class="btn-success generate-btn"
+            bindtap="generatePhoto"
+            disabled="{{!selectedSize || generating}}"
+          >
+            <text class="btn-icon">📸</text>
+            生成证件照
+          </button>
+          
+          <view class="action-buttons" wx:if="{{generatedPhoto}}">
+            <button class="btn-success" bindtap="downloadPhoto">
+              <text class="btn-icon">💾</text>
+              保存到相册
+            </button>
+            <button class="btn-default" bindtap="regeneratePhoto">
+              <text class="btn-icon">🔄</text>
+              重新生成
+            </button>
+          </view>
+          
+          <button class="btn-default reset-btn" bindtap="resetApp">
+            <text class="btn-icon">🔄</text>
+            重新上传
+          </button>
+          
+          <!-- 移动控制按钮 -->
+          <view class="control-buttons" wx:if="{{selectedSize}}">
+            
+            
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>
