@@ -48,7 +48,7 @@
   },
   "compileType": "miniprogram",
   "libVersion": "3.10.0",
-  "appid": "touristappid",
+  "appid": "wx165c38aa1e6ecae7",
   "projectname": "photo-cropper-miniprogram",
   "condition": {
     "search": {

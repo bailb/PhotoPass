@@ -34,9 +34,10 @@ Page({
       { name: '3寸', width: 649, height: 991 },
       { name: '4寸', width: 1051, height: 1496 },
       { name: '5寸', width: 1500, height: 2102 },
-      { name: '6寸', width: 1800, height: 2400 },
-      { name: '7寸', width: 2102, height: 1500 }
-    ]
+      { name: '6寸', width: 1800, height: 2400 }
+    ],
+    canvasWidth: 0, // 🎯 修复：Canvas宽度
+    canvasHeight: 0 // 🎯 修复：Canvas高度
   },
 
   onLoad() {
@@ -120,6 +121,23 @@ Page({
       imageOffsetY = 0
     }
     
+    // 🎯 真机调试修复：确保图片尺寸不会超出容器
+    actualImageWidth = Math.min(actualImageWidth, containerWidth)
+    actualImageHeight = Math.min(actualImageHeight, containerHeight)
+    
+    // 🎯 真机调试修复：确保偏移量在合理范围内
+    imageOffsetX = Math.max(0, Math.min(imageOffsetX, containerWidth - actualImageWidth))
+    imageOffsetY = Math.max(0, Math.min(imageOffsetY, containerHeight - actualImageHeight))
+    
+    console.log('🎯 真机调试修复 - 图片尺寸计算:', {
+      imageInfo: imageInfo,
+      containerWidth: containerWidth,
+      containerHeight: containerHeight,
+      actualImageWidth: actualImageWidth,
+      actualImageHeight: actualImageHeight,
+      imageOffsetX: imageOffsetX,
+      imageOffsetY: imageOffsetY
+    })
     
     this.setData({
       imageInfo: imageInfo,
@@ -326,6 +344,17 @@ Page({
       return
     }
 
+    // 🎯 修复：保存当前图片状态，避免在生成过程中被重置
+    const currentImageScale = this.data.imageScale
+    const currentImageScalePercent = this.data.imageScalePercent
+    const currentScaleHandlePosition = this.data.scaleHandlePosition
+
+    console.log('🎯 生成前保存图片状态:', {
+      imageScale: currentImageScale,
+      imageScalePercent: currentImageScalePercent,
+      scaleHandlePosition: currentScaleHandlePosition
+    })
+
     this.setData({
       generating: true
     })
@@ -336,7 +365,46 @@ Page({
 
   // 裁剪图片 - 完全重写算法，确保一致性，支持图片缩放
   cropImage() {
-    const ctx = wx.createCanvasContext('cropCanvas', this)
+    const { selectedSize, imageInfo, cropFrameWidth, cropFrameHeight, cropFrameX, cropFrameY, imageScale } = this.data
+    
+    // 🎯 修复：确保Canvas有正确的尺寸后再创建上下文
+    const canvasWidth = selectedSize.width
+    const canvasHeight = selectedSize.height
+    
+    console.log('🎯 Canvas初始化:', {
+      canvasWidth, canvasHeight,
+      selectedSize: selectedSize
+    })
+    
+    // 🎯 修复：先更新Canvas尺寸，再创建上下文
+    this.setData({
+      canvasWidth: canvasWidth,
+      canvasHeight: canvasHeight
+    })
+    
+    // 🎯 修复：使用nextTick确保尺寸更新完成
+    wx.nextTick(() => {
+      try {
+        const ctx = wx.createCanvasContext('cropCanvas', this)
+        console.log('🎯 Canvas上下文创建成功:', ctx)
+        
+        // 🎯 修复：添加延迟确保Canvas尺寸生效
+        setTimeout(() => {
+          this.performCrop(ctx, canvasWidth, canvasHeight)
+        }, 100)
+      } catch (error) {
+        console.error('🎯 Canvas上下文创建失败:', error)
+        wx.showToast({
+          title: 'Canvas创建失败',
+          icon: 'error'
+        })
+        this.setData({ generating: false })
+      }
+    })
+  },
+
+  // 🎯 修复：分离裁剪逻辑，确保Canvas已初始化
+  performCrop(ctx, canvasWidth, canvasHeight) {
     const { selectedSize, imageInfo, cropFrameWidth, cropFrameHeight, cropFrameX, cropFrameY, imageScale } = this.data
     
     // 使用与CSS一致的容器尺寸
@@ -371,12 +439,10 @@ Page({
       targetHeight: targetHeight
     })
     
-    // 🎯 修复：Canvas尺寸应该与目标证件照尺寸一致！
-    const canvasWidth = targetWidth
-    const canvasHeight = targetHeight
+    // 🎯 修复：Canvas尺寸已经在函数开头设置
+    // canvasWidth 和 canvasHeight 已经在函数开头定义
     
-    // 🎯 简化算法：直接基于裁剪框位置和尺寸计算
-    // 获取图片的实际渲染尺寸（考虑aspectFit和用户缩放）
+    // 🎯 修复：重新计算图片的实际显示尺寸和位置
     const imageAspectRatio = imageInfo.width / imageInfo.height
     const containerAspectRatio = containerWidth / containerHeight
     
@@ -396,28 +462,16 @@ Page({
       imageOffsetY = (containerHeight - actualImageHeight) / 2
     }
     
-    // 🎯 关键修复：裁剪框位置是相对于图片容器的，需要转换为相对于图片的坐标
-    // cropFrameX 和 cropFrameY 已经在函数开头从 this.data 中解构了
-    
     // 🎯 关键修复：裁剪框坐标转换
-    // 裁剪框位置是相对于图片容器的，需要考虑图片在容器中的偏移
-    // 但是需要正确处理坐标系统
+    // 裁剪框位置是相对于图片容器的，需要转换为相对于图片的坐标
     const cropRelativeX = cropFrameX - imageOffsetX
     const cropRelativeY = cropFrameY - imageOffsetY
     
-    // 🎯 关键修复：裁剪区域尺寸应该基于裁剪框的显示尺寸
-    // 裁剪框的显示尺寸与目标证件照尺寸的比例关系
-    const scaleX = targetWidth / cropFrameWidth
-    const scaleY = targetHeight / cropFrameHeight
-    
-    // 计算裁剪区域在原始图片中的尺寸
+    // 🎯 关键修复：计算裁剪区域在原始图片中的尺寸和位置
     const cropWidth = (cropFrameWidth / actualImageWidth) * imageInfo.width
     const cropHeight = (cropFrameHeight / actualImageHeight) * imageInfo.height
-    
-    // 计算裁剪区域在原始图片中的位置
     const cropX = cropRelativeX / actualImageWidth * imageInfo.width
     const cropY = cropRelativeY / actualImageHeight * imageInfo.height
-    
     
     // 边界检查
     const finalCropX = Math.max(0, Math.min(cropX, imageInfo.width - cropWidth))
@@ -425,14 +479,31 @@ Page({
     const finalCropWidth = Math.min(cropWidth, imageInfo.width - finalCropX)
     const finalCropHeight = Math.min(cropHeight, imageInfo.height - finalCropY)
     
-    
+    // 🎯 添加调试信息
+    console.log('🎯 裁剪计算详细信息:', {
+      containerWidth, containerHeight,
+      actualImageWidth, actualImageHeight,
+      imageOffsetX, imageOffsetY,
+      cropFrameX, cropFrameY, cropFrameWidth, cropFrameHeight,
+      cropRelativeX, cropRelativeY,
+      cropX, cropY, cropWidth, cropHeight,
+      finalCropX, finalCropY, finalCropWidth, finalCropHeight,
+      canvasWidth, canvasHeight,
+      targetWidth, targetHeight
+    })
     
     // 清空canvas
     ctx.clearRect(0, 0, canvasWidth, canvasHeight)
     
+    // 🎯 修复：直接按照目标证件照尺寸绘制，不保持宽高比
+    // 证件照需要严格按照目标尺寸输出
+    console.log('🎯 Canvas绘制参数:', {
+      canvasWidth, canvasHeight,
+      finalCropX, finalCropY, finalCropWidth, finalCropHeight,
+      targetWidth, targetHeight
+    })
     
-    
-    // 绘制裁剪后的图片 - Canvas尺寸 = 目标证件照尺寸
+    // 绘制裁剪后的图片到Canvas，直接填充整个Canvas
     ctx.drawImage(
       this.data.imageUrl,
       finalCropX, finalCropY, finalCropWidth, finalCropHeight,
@@ -450,9 +521,24 @@ Page({
         fileType: 'png',
         quality: 1.0,
         success: (res) => {
+          // 🎯 修复：生成成功后恢复图片状态
+          const currentImageScale = this.data.imageScale
+          const currentImageScalePercent = this.data.imageScalePercent
+          const currentScaleHandlePosition = this.data.scaleHandlePosition
+          
+          console.log('🎯 生成成功后恢复图片状态:', {
+            imageScale: currentImageScale,
+            imageScalePercent: currentImageScalePercent,
+            scaleHandlePosition: currentScaleHandlePosition
+          })
+          
           this.setData({
             generatedPhoto: res.tempFilePath,
-            generating: false
+            generating: false,
+            // 🎯 修复：确保图片缩放状态不被重置
+            imageScale: currentImageScale,
+            imageScalePercent: currentImageScalePercent,
+            scaleHandlePosition: currentScaleHandlePosition
           })
           wx.showToast({
             title: `${selectedSize.name}证件照生成成功！`,
@@ -465,7 +551,18 @@ Page({
             title: '导出图片失败',
             icon: 'error'
           })
-          this.setData({ generating: false })
+          // 🎯 修复：生成失败后也要恢复图片状态
+          const currentImageScale = this.data.imageScale
+          const currentImageScalePercent = this.data.imageScalePercent
+          const currentScaleHandlePosition = this.data.scaleHandlePosition
+          
+          this.setData({ 
+            generating: false,
+            // 🎯 修复：确保图片缩放状态不被重置
+            imageScale: currentImageScale,
+            imageScalePercent: currentImageScalePercent,
+            scaleHandlePosition: currentScaleHandlePosition
+          })
         }
       }, this)
     })

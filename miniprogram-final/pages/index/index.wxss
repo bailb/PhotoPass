@@ -100,6 +100,9 @@
   background: #f8f8f8;
   /* 🎯 新增：让内容居中 */
   align-items: center;
+  /* 🎯 真机调试修复：确保外层容器也隐藏超出部分 */
+  overflow: hidden;
+  position: relative;
 }
 
 .cropper-container {
@@ -114,6 +117,10 @@
   height: 500rpx; /* 直接使用图片尺寸 */
   /* 🎯 新增：添加边框美化画布 */
   border: 2rpx solid #e0e0e0;
+  /* 🎯 真机调试修复：强制隐藏超出部分 */
+  -webkit-overflow-scrolling: touch;
+  overflow-x: hidden;
+  overflow-y: hidden;
 }
 
 .cropper-image {
@@ -122,6 +129,11 @@
   border-radius: 10rpx; /* 🎯 调整圆角与容器协调 */
   transition: transform 0.3s ease;
   transform-origin: center center;
+  /* 🎯 真机调试修复：确保图片不会超出容器 */
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 /* 裁剪框样式 */
@@ -289,17 +301,20 @@
 /* Canvas样式 */
 .crop-canvas {
   position: absolute;
-  top: 20rpx;
-  left: 20rpx;
-  /* 尺寸由JavaScript动态设置 */
+  top: -9999rpx; /* 🎯 修复：将Canvas移到屏幕外，避免影响布局 */
+  left: -9999rpx; /* 🎯 修复：将Canvas移到屏幕外，避免影响布局 */
+  /* 🎯 修复：Canvas尺寸由JavaScript动态设置，CSS不限制 */
   opacity: 0;
   pointer-events: none;
   border-radius: 8rpx;
-  /* 确保Canvas尺寸不被CSS影响 */
+  /* 🎯 修复：确保Canvas尺寸不被CSS影响，但允许设置 */
   max-width: none !important;
   max-height: none !important;
   min-width: auto !important;
   min-height: auto !important;
+  /* 🎯 修复：确保Canvas不会影响页面布局但保持可见性 */
+  z-index: -1;
+  /* 🎯 修复：移除visibility: hidden，确保Canvas可以正确初始化 */
 }
 
 .preview-section {
@@ -446,6 +461,8 @@
   flex-wrap: wrap;
   gap: 12rpx;
   margin-bottom: 30rpx;
+  /* 🎯 修复：确保按钮布局一致 */
+  justify-content: space-between;
 }
 
 .size-btn {
@@ -455,8 +472,18 @@
   padding: 16rpx 24rpx;
   font-size: 24rpx;
   color: #333;
-  flex: 1;
-  min-width: 80rpx;
+  /* 🎯 修复：设置固定宽度，确保所有按钮显示为3排（每排3个） */
+  width: calc(33.333% - 8rpx);
+  min-width: 100rpx;
+  max-width: 150rpx;
+  text-align: center;
+  box-sizing: border-box;
+  /* 🎯 修复：确保按钮高度一致 */
+  height: 80rpx;
+  line-height: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .size-btn.active {

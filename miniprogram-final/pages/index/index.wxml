@@ -33,7 +33,8 @@
               src="{{imageUrl}}" 
               mode="aspectFit"
               bindload="onImageLoad"
-              style="transform: scale({{imageScale}});"
+              style="transform: scale({{imageScale}}) !important;"
+              lazy-load="false"
             />
             
             
@@ -91,8 +92,8 @@
           <canvas 
             canvas-id="cropCanvas" 
             class="crop-canvas"
-            style="width: {{selectedSize.width}}px; height: {{selectedSize.height}}px;"
-            wx:if="{{selectedSize}}"
+            style="width: {{canvasWidth}}px; height: {{canvasHeight}}px;"
+            wx:if="{{selectedSize && canvasWidth > 0 && canvasHeight > 0}}"
             disable-scroll="true"
           ></canvas>
           
