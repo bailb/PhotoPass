@@ -11,6 +11,17 @@ page {
   min-height: 100vh;
 }
 
+/* 🎯 全局按钮样式修复 - 移除所有按钮的弹跳效果 */
+button {
+  transition: none !important;
+  transform: none !important;
+}
+
+button:active {
+  transform: none !important;
+  transition: none !important;
+}
+
 /* 通用按钮样式 */
 .btn-primary {
   background: linear-gradient(135deg, #667eea, #764ba2);
@@ -20,6 +31,15 @@ page {
   padding: 20rpx 30rpx;
   font-size: 28rpx;
   font-weight: 600;
+  /* 🎯 修复：移除按钮弹跳效果 */
+  transition: none !important;
+  transform: none !important;
+}
+
+.btn-primary:active {
+  /* 🎯 修复：移除按钮按下时的弹跳效果 */
+  transform: none !important;
+  transition: none !important;
 }
 
 .btn-success {
@@ -30,6 +50,15 @@ page {
   padding: 20rpx 30rpx;
   font-size: 28rpx;
   font-weight: 600;
+  /* 🎯 修复：移除按钮弹跳效果 */
+  transition: none !important;
+  transform: none !important;
+}
+
+.btn-success:active {
+  /* 🎯 修复：移除按钮按下时的弹跳效果 */
+  transform: none !important;
+  transition: none !important;
 }
 
 .btn-default {
@@ -40,6 +69,15 @@ page {
   padding: 20rpx 30rpx;
   font-size: 28rpx;
   font-weight: 600;
+  /* 🎯 修复：移除按钮弹跳效果 */
+  transition: none !important;
+  transform: none !important;
+}
+
+.btn-default:active {
+  /* 🎯 修复：移除按钮按下时的弹跳效果 */
+  transform: none !important;
+  transition: none !important;
 }
 
 /* 卡片样式 */

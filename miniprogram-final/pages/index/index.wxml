@@ -33,8 +33,11 @@
               src="{{imageUrl}}" 
               mode="aspectFit"
               bindload="onImageLoad"
-              style="transform: scale({{imageScale}}) !important;"
+              style="transform: scale({{imageScale}}) translate({{imagePositionX}}rpx, {{imagePositionY}}rpx) !important;"
               lazy-load="false"
+              bindtouchstart="onImageTouchStart"
+              bindtouchmove="onImageTouchMove"
+              bindtouchend="onImageTouchEnd"
             />
             
             
@@ -56,11 +59,11 @@
                   <view class="crop-guide-line crop-guide-horizontal-2"></view>
                 </view>
                 
-                <!-- 四周透明按钮 -->
-                <button class="crop-btn crop-btn-up" bindtap="moveCropFrame" data-direction="up">⬆️</button>
-                <button class="crop-btn crop-btn-down" bindtap="moveCropFrame" data-direction="down">⬇️</button>
-                <button class="crop-btn crop-btn-left" bindtap="moveCropFrame" data-direction="left">⬅️</button>
-                <button class="crop-btn crop-btn-right" bindtap="moveCropFrame" data-direction="right">➡️</button>
+                <!-- 四周透明按钮 - 移动图片 -->
+                <button class="crop-btn crop-btn-up" bindtap="moveImage" data-direction="up">⬆️</button>
+                <button class="crop-btn crop-btn-down" bindtap="moveImage" data-direction="down">⬇️</button>
+                <button class="crop-btn crop-btn-left" bindtap="moveImage" data-direction="left">⬅️</button>
+                <button class="crop-btn crop-btn-right" bindtap="moveImage" data-direction="right">➡️</button>
                 
               </view>
             </view>
@@ -210,8 +213,10 @@
           
           <!-- 移动控制按钮 -->
           <view class="control-buttons" wx:if="{{selectedSize}}">
-            
-            
+            <button class="btn-default" bindtap="resetImagePosition">
+              <text class="btn-icon">🔄</text>
+              重置图片位置
+            </button>
           </view>
         </view>
       </view>

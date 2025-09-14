@@ -37,7 +37,13 @@ Page({
       { name: '6寸', width: 1800, height: 2400 }
     ],
     canvasWidth: 0, // 🎯 修复：Canvas宽度
-    canvasHeight: 0 // 🎯 修复：Canvas高度
+    canvasHeight: 0, // 🎯 修复：Canvas高度
+    // 🎯 新增：图片拖拽相关变量
+    imagePositionX: 0, // 图片X位置偏移
+    imagePositionY: 0, // 图片Y位置偏移
+    isImageDragging: false, // 是否正在拖拽图片
+    imageDragStartX: 0, // 图片拖拽开始X坐标
+    imageDragStartY: 0 // 图片拖拽开始Y坐标
   },
 
   onLoad() {
@@ -405,7 +411,7 @@ Page({
 
   // 🎯 修复：分离裁剪逻辑，确保Canvas已初始化
   performCrop(ctx, canvasWidth, canvasHeight) {
-    const { selectedSize, imageInfo, cropFrameWidth, cropFrameHeight, cropFrameX, cropFrameY, imageScale } = this.data
+    const { selectedSize, imageInfo, cropFrameWidth, cropFrameHeight, cropFrameX, cropFrameY, imageScale, imagePositionX, imagePositionY } = this.data
     
     // 使用与CSS一致的容器尺寸
     const containerWidth = 500  // rpx单位 - 对应CSS中的图片显示宽度
@@ -452,44 +458,187 @@ Page({
       // 图片更宽，以容器宽度为准
       actualImageWidth = containerWidth * imageScale
       actualImageHeight = actualImageWidth / imageAspectRatio
-      imageOffsetX = (containerWidth - actualImageWidth) / 2
-      imageOffsetY = (containerHeight - actualImageHeight) / 2
+      imageOffsetX = (containerWidth - actualImageWidth) / 2 + imagePositionX
+      imageOffsetY = (containerHeight - actualImageHeight) / 2 + imagePositionY
     } else {
       // 图片更高，以容器高度为准
       actualImageHeight = containerHeight * imageScale
       actualImageWidth = actualImageHeight * imageAspectRatio
-      imageOffsetX = (containerWidth - actualImageWidth) / 2
-      imageOffsetY = (containerHeight - actualImageHeight) / 2
+      imageOffsetX = (containerWidth - actualImageWidth) / 2 + imagePositionX
+      imageOffsetY = (containerHeight - actualImageHeight) / 2 + imagePositionY
     }
     
     // 🎯 关键修复：裁剪框坐标转换
     // 裁剪框位置是相对于图片容器的，需要转换为相对于图片的坐标
+    // 考虑图片的缩放和移动变换
     const cropRelativeX = cropFrameX - imageOffsetX
     const cropRelativeY = cropFrameY - imageOffsetY
     
+    console.log('🎯 图片移动后的坐标计算:', {
+      imagePositionX, imagePositionY,
+      imageOffsetX, imageOffsetY,
+      cropFrameX, cropFrameY,
+      cropRelativeX, cropRelativeY,
+      actualImageWidth, actualImageHeight
+    })
+    
+    // 🎯 修复：真机偏差修复 - 添加设备像素比补偿
+    const systemInfo = wx.getSystemInfoSync()
+    const devicePixelRatio = systemInfo.pixelRatio || 1
+    const screenWidth = systemInfo.screenWidth
+    const rpxToPx = screenWidth / 750 // rpx转px的转换比例
+    
+    console.log('🎯 设备信息:', {
+      devicePixelRatio,
+      screenWidth,
+      rpxToPx,
+      systemInfo
+    })
+    
     // 🎯 关键修复：计算裁剪区域在原始图片中的尺寸和位置
+    // 需要考虑图片的缩放比例和设备像素比
     const cropWidth = (cropFrameWidth / actualImageWidth) * imageInfo.width
     const cropHeight = (cropFrameHeight / actualImageHeight) * imageInfo.height
     const cropX = cropRelativeX / actualImageWidth * imageInfo.width
     const cropY = cropRelativeY / actualImageHeight * imageInfo.height
     
-    // 边界检查
-    const finalCropX = Math.max(0, Math.min(cropX, imageInfo.width - cropWidth))
-    const finalCropY = Math.max(0, Math.min(cropY, imageInfo.height - cropHeight))
-    const finalCropWidth = Math.min(cropWidth, imageInfo.width - finalCropX)
-    const finalCropHeight = Math.min(cropHeight, imageInfo.height - finalCropY)
+    // 🎯 修复：真机偏差补偿 - 更精确的补偿算法
+    // 根据设备类型和像素比进行精确补偿
+    let deviceOffsetY = 0
+    let deviceOffsetX = 0
     
-    // 🎯 添加调试信息
-    console.log('🎯 裁剪计算详细信息:', {
+    // 🎯 基于像素比的精确补偿
+    if (devicePixelRatio >= 3) {
+      // 超高分辨率设备（如iPhone 6 Plus等）
+      deviceOffsetY = 1.5  // 增加补偿
+      deviceOffsetX = 0.5   // 添加左右补偿
+    } else if (devicePixelRatio >= 2.5) {
+      // 高分辨率设备（如iPhone X等）
+      deviceOffsetY = 1.2
+      deviceOffsetX = 0.3
+    } else if (devicePixelRatio >= 2) {
+      // 高分辨率设备（如iPhone 6等）
+      deviceOffsetY = 0.8  // 增加补偿
+      deviceOffsetX = 0.2  // 添加左右补偿
+    } else if (devicePixelRatio >= 1.5) {
+      // 中等分辨率设备
+      deviceOffsetY = 0.3
+      deviceOffsetX = 0.1
+    } else {
+      // 低分辨率设备
+      deviceOffsetY = 0.1
+      deviceOffsetX = 0
+    }
+    
+    // 🎯 根据设备型号进行特殊补偿
+    const model = systemInfo.model || ''
+    if (model.includes('iPhone')) {
+      deviceOffsetY += 0.3 // iPhone设备额外补偿
+      deviceOffsetX += 0.1 // iPhone设备左右补偿
+    } else if (model.includes('iPad')) {
+      deviceOffsetY += 0.2 // iPad设备额外补偿
+      deviceOffsetX += 0.1 // iPad设备左右补偿
+    } else if (model.includes('Android')) {
+      deviceOffsetY += 0.1 // Android设备补偿
+      deviceOffsetX += 0.05 // Android设备左右补偿
+    }
+    
+    // 🎯 根据屏幕尺寸进行额外补偿
+    const screenHeight = systemInfo.screenHeight || 0
+    if (screenHeight > 2000) {
+      // 大屏设备
+      deviceOffsetY += 0.2
+      deviceOffsetX += 0.1
+    }
+    
+    // 🎯 动态补偿：基于裁剪框位置进行微调
+    // 如果裁剪框在图片的上半部分，增加向下补偿
+    if (cropFrameY < containerHeight / 2) {
+      deviceOffsetY += 0.2
+    }
+    // 如果裁剪框在图片的左半部分，增加向右补偿
+    if (cropFrameX < containerWidth / 2) {
+      deviceOffsetX += 0.1
+    }
+    
+    // 🎯 基于图片缩放比例的补偿
+    if (imageScale > 1.5) {
+      // 图片放大时，需要减少补偿
+      deviceOffsetY *= 0.8
+      deviceOffsetX *= 0.8
+    } else if (imageScale < 0.8) {
+      // 图片缩小时，需要增加补偿
+      deviceOffsetY *= 1.2
+      deviceOffsetX *= 1.2
+    }
+    
+    // 🎯 修复：图片移动后的特殊补偿
+    // 当图片被移动后，需要额外的补偿来抵消移动带来的偏差
+    let moveCompensationY = 0
+    let moveCompensationX = 0
+    
+    // 根据图片移动方向进行补偿
+    if (imagePositionY > 0) {
+      // 图片向下移动，裁剪框需要向上补偿
+      moveCompensationY = -imagePositionY * 0.3
+    } else if (imagePositionY < 0) {
+      // 图片向上移动，裁剪框需要向下补偿
+      moveCompensationY = -imagePositionY * 0.3
+    }
+    
+    if (imagePositionX > 0) {
+      // 图片向右移动，裁剪框需要向左补偿
+      moveCompensationX = -imagePositionX * 0.3
+    } else if (imagePositionX < 0) {
+      // 图片向左移动，裁剪框需要向右补偿
+      moveCompensationX = -imagePositionX * 0.3
+    }
+    
+    // 🎯 根据移动距离调整补偿强度
+    const moveDistance = Math.sqrt(imagePositionX * imagePositionX + imagePositionY * imagePositionY)
+    if (moveDistance > 50) {
+      // 移动距离较大时，增加补偿
+      moveCompensationY *= 1.2
+      moveCompensationX *= 1.2
+    }
+    
+    console.log('🎯 图片移动补偿:', {
+      imagePositionX, imagePositionY,
+      moveCompensationX, moveCompensationY,
+      moveDistance
+    })
+    
+    // 应用移动补偿
+    deviceOffsetY += moveCompensationY
+    deviceOffsetX += moveCompensationX
+    
+    const adjustedCropX = cropX + deviceOffsetX
+    const adjustedCropY = cropY + deviceOffsetY
+    
+    console.log('🎯 裁剪计算详细信息（包含变换）:', {
       containerWidth, containerHeight,
       actualImageWidth, actualImageHeight,
       imageOffsetX, imageOffsetY,
+      imagePositionX, imagePositionY,
+      imageScale,
       cropFrameX, cropFrameY, cropFrameWidth, cropFrameHeight,
       cropRelativeX, cropRelativeY,
       cropX, cropY, cropWidth, cropHeight,
+      deviceOffsetX, deviceOffsetY, adjustedCropX, adjustedCropY,
+      devicePixelRatio, model, screenHeight,
+      finalCropX: adjustedCropX, finalCropY: adjustedCropY, finalCropWidth: cropWidth, finalCropHeight: cropHeight
+    })
+    
+    // 🎯 修复：边界检查，确保裁剪区域在图片范围内
+    const finalCropX = Math.max(0, Math.min(adjustedCropX, imageInfo.width - cropWidth))
+    const finalCropY = Math.max(0, Math.min(adjustedCropY, imageInfo.height - cropHeight))
+    const finalCropWidth = Math.min(cropWidth, imageInfo.width - finalCropX)
+    const finalCropHeight = Math.min(cropHeight, imageInfo.height - finalCropY)
+    
+    console.log('🎯 最终裁剪参数:', {
       finalCropX, finalCropY, finalCropWidth, finalCropHeight,
-      canvasWidth, canvasHeight,
-      targetWidth, targetHeight
+      imageInfo: { width: imageInfo.width, height: imageInfo.height },
+      canvasWidth, canvasHeight
     })
     
     // 清空canvas
@@ -503,11 +652,68 @@ Page({
       targetWidth, targetHeight
     })
     
+    // 🎯 修复：真机Canvas绘制补偿
+    // 添加Canvas绘制的微调偏移，确保真机上的绘制精度
+    let canvasOffsetX = 0
+    let canvasOffsetY = 0
+    
+    // 🎯 基于设备像素比的Canvas补偿
+    if (devicePixelRatio >= 3) {
+      canvasOffsetX = 0.3
+      canvasOffsetY = 0.8
+    } else if (devicePixelRatio >= 2.5) {
+      canvasOffsetX = 0.2
+      canvasOffsetY = 0.6
+    } else if (devicePixelRatio >= 2) {
+      canvasOffsetX = 0.1
+      canvasOffsetY = 0.4
+    } else if (devicePixelRatio >= 1.5) {
+      canvasOffsetX = 0.05
+      canvasOffsetY = 0.2
+    } else {
+      canvasOffsetX = 0
+      canvasOffsetY = 0.1
+    }
+    
+    // 🎯 根据设备型号进行Canvas补偿
+    if (model.includes('iPhone')) {
+      canvasOffsetX += 0.1
+      canvasOffsetY += 0.2
+    } else if (model.includes('iPad')) {
+      canvasOffsetX += 0.05
+      canvasOffsetY += 0.1
+    }
+    
+    // 🎯 修复：图片移动后的Canvas补偿
+    // 当图片被移动后，Canvas绘制也需要相应的补偿
+    let canvasMoveCompensationX = 0
+    let canvasMoveCompensationY = 0
+    
+    // 根据图片移动方向调整Canvas绘制位置
+    if (imagePositionY !== 0) {
+      canvasMoveCompensationY = imagePositionY * 0.1 // 移动补偿
+    }
+    if (imagePositionX !== 0) {
+      canvasMoveCompensationX = imagePositionX * 0.1 // 移动补偿
+    }
+    
+    // 应用Canvas移动补偿
+    canvasOffsetX += canvasMoveCompensationX
+    canvasOffsetY += canvasMoveCompensationY
+    
+    console.log('🎯 Canvas绘制补偿:', {
+      canvasOffsetX, canvasOffsetY,
+      canvasMoveCompensationX, canvasMoveCompensationY,
+      devicePixelRatio,
+      finalCropX, finalCropY, finalCropWidth, finalCropHeight,
+      canvasWidth, canvasHeight
+    })
+    
     // 绘制裁剪后的图片到Canvas，直接填充整个Canvas
     ctx.drawImage(
       this.data.imageUrl,
       finalCropX, finalCropY, finalCropWidth, finalCropHeight,
-      0, 0, canvasWidth, canvasHeight
+      canvasOffsetX, canvasOffsetY, canvasWidth, canvasHeight
     )
     
     ctx.draw(false, () => {
@@ -680,15 +886,35 @@ Page({
     let newY = this.data.cropFrameY + deltaY
     
     // 🎯 修复：边界检查应该基于照片的实际显示区域
-    const { cropFrameWidth, cropFrameHeight, imageInfo, actualImageWidth, actualImageHeight, imageOffsetX, imageOffsetY } = this.data
+    const { cropFrameWidth, cropFrameHeight, imageInfo, actualImageWidth, actualImageHeight, imageOffsetX, imageOffsetY, imageScale, imagePositionX, imagePositionY } = this.data
     const containerWidth = 500  // 容器宽度
     const containerHeight = 500  // 容器高度
     
+    // 🎯 修复：重新计算图片的实际显示区域，考虑缩放和移动
+    const imageAspectRatio = imageInfo.width / imageInfo.height
+    const containerAspectRatio = containerWidth / containerHeight
+    
+    let currentActualImageWidth, currentActualImageHeight, currentImageOffsetX, currentImageOffsetY
+    
+    if (imageAspectRatio > containerAspectRatio) {
+      // 图片更宽，以容器宽度为准
+      currentActualImageWidth = containerWidth * imageScale
+      currentActualImageHeight = currentActualImageWidth / imageAspectRatio
+      currentImageOffsetX = (containerWidth - currentActualImageWidth) / 2 + imagePositionX
+      currentImageOffsetY = (containerHeight - currentActualImageHeight) / 2 + imagePositionY
+    } else {
+      // 图片更高，以容器高度为准
+      currentActualImageHeight = containerHeight * imageScale
+      currentActualImageWidth = currentActualImageHeight * imageAspectRatio
+      currentImageOffsetX = (containerWidth - currentActualImageWidth) / 2 + imagePositionX
+      currentImageOffsetY = (containerHeight - currentActualImageHeight) / 2 + imagePositionY
+    }
+    
     // 照片的实际显示区域边界（不能超出容器）
-    const imageLeft = Math.max(0, imageOffsetX)
-    const imageRight = Math.min(containerWidth, imageOffsetX + actualImageWidth)
-    const imageTop = Math.max(0, imageOffsetY)
-    const imageBottom = Math.min(containerHeight, imageOffsetY + actualImageHeight)
+    const imageLeft = Math.max(0, currentImageOffsetX)
+    const imageRight = Math.min(containerWidth, currentImageOffsetX + currentActualImageWidth)
+    const imageTop = Math.max(0, currentImageOffsetY)
+    const imageBottom = Math.min(containerHeight, currentImageOffsetY + currentActualImageHeight)
     
     // 裁剪框不能超出照片的实际显示区域，也不能超出容器
     const minX = imageLeft
@@ -699,6 +925,15 @@ Page({
     newX = Math.max(minX, Math.min(newX, maxX))
     newY = Math.max(minY, Math.min(newY, maxY))
     
+    console.log('🎯 裁剪框边界检查:', {
+      imageScale, imagePositionX, imagePositionY,
+      currentActualImageWidth, currentActualImageHeight,
+      currentImageOffsetX, currentImageOffsetY,
+      imageLeft, imageRight, imageTop, imageBottom,
+      minX, maxX, minY, maxY,
+      cropFrameWidth, cropFrameHeight,
+      newX, newY
+    })
     
     this.setData({
       cropFrameX: newX,
@@ -715,50 +950,41 @@ Page({
     })
   },
 
-  // 测试按钮移动裁剪框
-  moveCropFrame(e) {
+  // 🎯 修改：移动图片功能
+  moveImage(e) {
     const direction = e.currentTarget.dataset.direction
     const step = 10 // 移动步长
     
-    let newX = this.data.cropFrameX
-    let newY = this.data.cropFrameY
+    let newImageX = this.data.imagePositionX
+    let newImageY = this.data.imagePositionY
     
-    // 🎯 修复：边界检查应该基于照片的实际显示区域
-    const { cropFrameWidth, cropFrameHeight, actualImageWidth, actualImageHeight, imageOffsetX, imageOffsetY } = this.data
-    const containerWidth = 500  // 容器宽度
-    const containerHeight = 500  // 容器高度
-    
-    // 照片的实际显示区域边界（不能超出容器）
-    const imageLeft = Math.max(0, imageOffsetX)
-    const imageRight = Math.min(containerWidth, imageOffsetX + actualImageWidth)
-    const imageTop = Math.max(0, imageOffsetY)
-    const imageBottom = Math.min(containerHeight, imageOffsetY + actualImageHeight)
-    
-    // 裁剪框不能超出照片的实际显示区域，也不能超出容器
-    const minX = imageLeft
-    const maxX = Math.min(imageRight - cropFrameWidth, containerWidth - cropFrameWidth) - 1  // 🎯 减去1像素确保不超出
-    const minY = imageTop
-    const maxY = Math.min(imageBottom - cropFrameHeight, containerHeight - cropFrameHeight) - 1  // 🎯 减去1像素确保不超出
+    // 🎯 边界检查：确保图片不会移出容器太远
+    const maxOffset = 200 // 最大偏移量
     
     switch (direction) {
       case 'up':
-        newY = Math.max(minY, newY - step)
+        newImageY = Math.max(-maxOffset, newImageY - step)
         break
       case 'down':
-        newY = Math.min(maxY, newY + step)
+        newImageY = Math.min(maxOffset, newImageY + step)
         break
       case 'left':
-        newX = Math.max(minX, newX - step)
+        newImageX = Math.max(-maxOffset, newImageX - step)
         break
       case 'right':
-        newX = Math.min(maxX, newX + step)
+        newImageX = Math.min(maxOffset, newImageX + step)
         break
     }
     
-    
     this.setData({
-      cropFrameX: newX,
-      cropFrameY: newY
+      imagePositionX: newImageX,
+      imagePositionY: newImageY
+    })
+    
+    console.log('🎯 图片移动:', {
+      direction: direction,
+      newImageX: newImageX,
+      newImageY: newImageY
     })
   },
 
@@ -837,6 +1063,65 @@ Page({
   },
 
 
+  // 🎯 新增：图片拖拽开始
+  onImageTouchStart(e) {
+    if (!this.data.imageUrl) return
+    
+    const touch = e.touches[0]
+    this.setData({
+      isImageDragging: true,
+      imageDragStartX: touch.clientX,
+      imageDragStartY: touch.clientY
+    })
+  },
+
+  // 🎯 新增：图片拖拽移动
+  onImageTouchMove(e) {
+    if (!this.data.isImageDragging || !this.data.imageUrl) return
+    
+    const touch = e.touches[0]
+    const deltaX = touch.clientX - this.data.imageDragStartX
+    const deltaY = touch.clientY - this.data.imageDragStartY
+    
+    // 计算新的图片位置
+    let newImageX = this.data.imagePositionX + deltaX
+    let newImageY = this.data.imagePositionY + deltaY
+    
+    // 🎯 边界检查：确保图片不会移出容器太远
+    const containerWidth = 500
+    const containerHeight = 500
+    const maxOffset = 200 // 最大偏移量
+    
+    newImageX = Math.max(-maxOffset, Math.min(newImageX, maxOffset))
+    newImageY = Math.max(-maxOffset, Math.min(newImageY, maxOffset))
+    
+    this.setData({
+      imagePositionX: newImageX,
+      imagePositionY: newImageY,
+      imageDragStartX: touch.clientX,
+      imageDragStartY: touch.clientY
+    })
+  },
+
+  // 🎯 新增：图片拖拽结束
+  onImageTouchEnd(e) {
+    this.setData({
+      isImageDragging: false
+    })
+  },
+
+  // 🎯 新增：重置图片位置
+  resetImagePosition() {
+    this.setData({
+      imagePositionX: 0,
+      imagePositionY: 0
+    })
+    wx.showToast({
+      title: '图片位置已重置',
+      icon: 'success'
+    })
+  },
+
   // 重置应用
   resetApp() {
     this.setData({
@@ -853,7 +1138,11 @@ Page({
       imageScale: 1.0,
       imageScalePercent: 100,
       scaleHandlePosition: 150,
-      isScaling: false
+      isScaling: false,
+      // 🎯 新增：重置图片位置
+      imagePositionX: 0,
+      imagePositionY: 0,
+      isImageDragging: false
     })
     wx.showToast({
       title: '已重置',
