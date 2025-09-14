@@ -3,44 +3,45 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 80vh;
+  min-height: 70vh;
+  padding-top: 20rpx;
 }
 
 .upload-icon {
-  font-size: 80rpx;
+  font-size: 70rpx;
   text-align: center;
-  margin-bottom: 20rpx;
+  margin-bottom: 15rpx;
 }
 
 .upload-title {
-  font-size: 36rpx;
+  font-size: 32rpx;
   font-weight: 600;
   color: #333;
   text-align: center;
-  margin-bottom: 10rpx;
+  margin-bottom: 8rpx;
 }
 
 .upload-desc {
-  font-size: 24rpx;
+  font-size: 22rpx;
   color: #666;
   text-align: center;
-  margin-bottom: 40rpx;
+  margin-bottom: 30rpx;
 }
 
 .upload-btn {
   background: linear-gradient(135deg, #667eea, #764ba2);
   border: none;
   border-radius: 16rpx;
-  padding: 40rpx;
+  padding: 30rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20rpx;
+  gap: 15rpx;
   width: 100%;
 }
 
 .upload-icon-large {
-  font-size: 60rpx;
+  font-size: 50rpx;
 }
 
 .upload-text {
@@ -63,40 +64,24 @@
 
 /* 裁剪区域样式 */
 .cropper-section {
-  margin-top: 20rpx;
+  margin-top: 10rpx;
 }
 
-.card-header {
-  text-align: center;
-  margin-bottom: 30rpx;
-}
-
-.card-title {
-  font-size: 32rpx;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 8rpx;
-}
-
-.card-desc {
-  font-size: 24rpx;
-  color: #666;
-}
 
 .main-workspace {
   display: flex;
   flex-direction: column;
-  gap: 30rpx;
+  gap: 20rpx;
 }
 
 .image-area {
   display: flex;
   flex-direction: column;
-  gap: 20rpx;
+  gap: 15rpx;
   /* 🎯 新增：外层容器边框 */
   border: 2rpx solid #d0d0d0;
   border-radius: 16rpx;
-  padding: 20rpx;
+  padding: 15rpx;
   background: #f8f8f8;
   /* 🎯 新增：让内容居中 */
   align-items: center;
@@ -123,6 +108,15 @@
   overflow-y: hidden;
 }
 
+/* 🎯 新增：生成证件照后的容器样式 */
+.cropper-container.generated {
+  width: 500rpx;
+  height: 500rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .cropper-image {
   width: 500rpx;
   height: 500rpx;
@@ -134,6 +128,14 @@
   max-height: 100%;
   object-fit: cover;
   display: block;
+}
+
+/* 🎯 新增：生成证件照后的图片样式 */
+.cropper-image.generated {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transform: none !important;
 }
 
 /* 裁剪框样式 */
@@ -317,58 +319,6 @@
   /* 🎯 修复：移除visibility: hidden，确保Canvas可以正确初始化 */
 }
 
-.preview-section {
-  background: white;
-  border-radius: 12rpx;
-  padding: 20rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
-  /* 🎯 修复：确保生成图片不被压缩 */
-  width: 100%;
-  flex-shrink: 0;
-}
-
-.preview-image {
-  position: relative;
-  margin-bottom: 20rpx;
-}
-
-.preview-img {
-  width: 100%;
-  height: 200rpx;
-  border-radius: 8rpx;
-  /* 🎯 修复：确保生成图片有合适的尺寸 */
-  min-height: 200rpx;
-  object-fit: contain;
-}
-
-.image-overlay {
-  position: absolute;
-  top: 10rpx;
-  right: 10rpx;
-  display: flex;
-  gap: 8rpx;
-}
-
-.quality-badge, .format-badge {
-  background: rgba(0, 0, 0, 0.6);
-  color: white;
-  padding: 4rpx 8rpx;
-  border-radius: 4rpx;
-  font-size: 20rpx;
-}
-
-.preview-actions {
-  display: flex;
-  gap: 16rpx;
-}
-
-.preview-actions button {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8rpx;
-}
 
 /* 底部操作按钮样式 */
 .bottom-actions {
@@ -394,7 +344,8 @@
 
 .action-buttons {
   display: flex;
-  gap: 16rpx;
+  gap: 12rpx;
+  flex-wrap: wrap;
 }
 
 .action-buttons button {
@@ -402,8 +353,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8rpx;
-  padding: 20rpx;
+  gap: 6rpx;
+  padding: 18rpx 12rpx;
+  font-size: 24rpx;
+  min-width: 0;
 }
 
 .reset-btn {
@@ -419,23 +372,23 @@
 .control-panel {
   background: white;
   border-radius: 12rpx;
-  padding: 30rpx;
+  padding: 20rpx;
   box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
 }
 
 .section-title {
-  font-size: 28rpx;
+  font-size: 26rpx;
   font-weight: 600;
   color: #333;
-  margin-bottom: 20rpx;
+  margin-bottom: 15rpx;
 }
 
 .selected-size-info {
   background: rgba(102, 126, 234, 0.1);
   border: 1rpx solid rgba(102, 126, 234, 0.2);
   border-radius: 8rpx;
-  padding: 16rpx;
-  margin-bottom: 20rpx;
+  padding: 12rpx;
+  margin-bottom: 15rpx;
 }
 
 .selected-badge {
@@ -459,8 +412,8 @@
 .size-buttons {
   display: flex;
   flex-wrap: wrap;
-  gap: 12rpx;
-  margin-bottom: 30rpx;
+  gap: 6rpx;
+  margin-bottom: 15rpx;
   /* 🎯 修复：确保按钮布局一致 */
   justify-content: space-between;
 }
@@ -469,18 +422,18 @@
   background: white;
   border: 2rpx solid #e8ecf7;
   border-radius: 8rpx;
-  padding: 16rpx 24rpx;
-  font-size: 24rpx;
+  padding: 12rpx 16rpx;
+  font-size: 22rpx;
   color: #333;
-  /* 🎯 修复：设置固定宽度，确保所有按钮显示为3排（每排3个） */
-  width: calc(33.333% - 8rpx);
-  min-width: 100rpx;
-  max-width: 150rpx;
+  /* 🎯 修改：设置固定宽度，确保所有按钮显示为2排（每排3个） */
+  width: calc(50% - 4rpx);
+  min-width: 120rpx;
+  max-width: 180rpx;
   text-align: center;
   box-sizing: border-box;
   /* 🎯 修复：确保按钮高度一致 */
-  height: 80rpx;
-  line-height: 48rpx;
+  height: 70rpx;
+  line-height: 46rpx;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -493,13 +446,43 @@
 }
 
 .custom-size-section {
-  margin-bottom: 30rpx;
+  margin-bottom: 20rpx;
+}
+
+.custom-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12rpx 0;
+  cursor: pointer;
+  border-bottom: 1rpx solid #f0f0f0;
 }
 
 .custom-title {
   font-size: 24rpx;
   color: #666;
-  margin-bottom: 16rpx;
+  margin: 0;
+}
+
+.toggle-icon {
+  font-size: 20rpx;
+  color: #999;
+  transition: transform 0.3s ease;
+}
+
+.toggle-icon.expanded {
+  transform: rotate(180deg);
+}
+
+.custom-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.custom-content.show {
+  max-height: 500rpx;
+  padding-top: 15rpx;
 }
 
 .custom-btn {
@@ -638,7 +621,7 @@
 
 /* 水平比例尺样式 */
 .scale-ruler-container {
-  margin-top: 20rpx;
+  margin-top: 10rpx;
   padding: 0 20rpx;
   /* 🎯 修复：确保缩放比例尺不被压缩 */
   width: 100%;
@@ -648,7 +631,7 @@
 .scale-ruler {
   background: white;
   border-radius: 12rpx;
-  padding: 20rpx;
+  padding: 15rpx;
   box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
   /* 🎯 修复：确保缩放比例尺有足够宽度 */
   min-width: 400rpx;
@@ -656,15 +639,31 @@
 
 .scale-track {
   position: relative;
-  height: 60rpx;
-  background: linear-gradient(to right, #ff4d4f, #faad14, #52c41a);
-  border-radius: 30rpx;
-  margin-bottom: 16rpx;
+  height: 50rpx;
+  background: linear-gradient(to right, #ff4d4f 0%, #faad14 50%, #52c41a 100%);
+  border-radius: 25rpx;
+  margin-bottom: 10rpx;
+  /* 左边低右边高的3D效果 */
+  box-shadow: 
+    /* 左边低：内阴影向下 */
+    inset 0 4rpx 8rpx rgba(0, 0, 0, 0.2),
+    /* 右边高：外阴影向上 */
+    0 -4rpx 8rpx rgba(0, 0, 0, 0.1),
+    /* 整体阴影 */
+    0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+  /* 添加渐变高度效果 */
+  background: 
+    linear-gradient(135deg, 
+      rgba(255, 77, 79, 0.8) 0%, 
+      rgba(250, 173, 20, 0.9) 50%, 
+      rgba(82, 196, 26, 1) 100%
+    ),
+    linear-gradient(to right, #ff4d4f 0%, #faad14 50%, #52c41a 100%);
 }
 
 .scale-handle {
   position: absolute;
-  top: -10rpx;
+  top: 5rpx;
   width: 40rpx;
   height: 40rpx;
   background: white;
@@ -675,36 +674,7 @@
   transform: translateX(-50%);
 }
 
-.scale-mark {
-  position: absolute;
-  top: 70rpx;
-  font-size: 20rpx;
-  color: #666;
-  font-weight: 600;
-}
 
-.scale-mark-left {
-  left: 0;
-}
-
-.scale-mark-center {
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.scale-mark-right {
-  right: 0;
-}
-
-.scale-info {
-  text-align: center;
-}
-
-.scale-current {
-  font-size: 28rpx;
-  font-weight: 600;
-  color: #667eea;
-}
 
 
 

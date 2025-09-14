@@ -19,21 +19,17 @@
   <!-- 裁剪区域 -->
   <view class="cropper-section" wx:if="{{imageUrl}}">
     <view class="card">
-      <view class="card-header">
-        <view class="card-title">📐 调整裁剪区域</view>
-        <view class="card-desc">选择证件照尺寸并生成</view>
-      </view>
       
       <view class="main-workspace">
         <!-- 图片区域 -->
         <view class="image-area">
-          <view class="cropper-container">
+          <view class="cropper-container {{generatedPhoto ? 'generated' : ''}}">
             <image 
-              class="cropper-image" 
-              src="{{imageUrl}}" 
+              class="cropper-image {{generatedPhoto ? 'generated' : ''}}" 
+              src="{{generatedPhoto || imageUrl}}" 
               mode="aspectFit"
               bindload="onImageLoad"
-              style="transform: scale({{imageScale}}) translate({{imagePositionX}}rpx, {{imagePositionY}}rpx) !important;"
+              style="{{generatedPhoto ? '' : 'transform: scale(' + imageScale + ') translate(' + imagePositionX + 'rpx, ' + imagePositionY + 'rpx) !important;'}}"
               lazy-load="false"
               bindtouchstart="onImageTouchStart"
               bindtouchmove="onImageTouchMove"
@@ -42,7 +38,7 @@
             
             
             <!-- 裁剪框 -->
-            <view class="crop-frame" wx:if="{{selectedSize}}">
+            <view class="crop-frame" wx:if="{{selectedSize && !generatedPhoto}}">
               <view class="crop-overlay">
                 
                 <view 
@@ -72,7 +68,7 @@
           <!-- 调试信息 -->
           
           <!-- 水平比例尺 -->
-          <view class="scale-ruler-container" wx:if="{{imageUrl}}">
+          <view class="scale-ruler-container" wx:if="{{imageUrl && !generatedPhoto}}">
             <view class="scale-ruler">
               <view class="scale-track">
                 <view class="scale-handle" 
@@ -81,12 +77,6 @@
                       bindtouchmove="onScaleMove"
                       bindtouchend="onScaleEnd">
                 </view>
-                <view class="scale-mark scale-mark-left">0.5</view>
-                <view class="scale-mark scale-mark-center">1.0</view>
-                <view class="scale-mark scale-mark-right">3.0</view>
-              </view>
-              <view class="scale-info">
-                <text class="scale-current">{{imageScale.toFixed(1)}}x</text>
               </view>
             </view>
           </view>
@@ -100,16 +90,6 @@
             disable-scroll="true"
           ></canvas>
           
-          <!-- 预览区域 -->
-          <view class="preview-section" wx:if="{{generatedPhoto}}">
-            <view class="preview-image">
-              <image class="preview-img" src="{{generatedPhoto}}" mode="aspectFit" />
-              <view class="image-overlay">
-                <view class="quality-badge">高清</view>
-                <view class="format-badge">PNG</view>
-              </view>
-            </view>
-          </view>
         </view>
 
         <!-- 控制面板 -->
@@ -139,47 +119,52 @@
             
             <!-- 自定义尺寸 -->
             <view class="custom-size-section">
-              <view class="custom-title">自定义尺寸</view>
+              <view class="custom-header" bindtap="toggleCustomSize">
+                <view class="custom-title">自定义尺寸</view>
+                <view class="toggle-icon {{showCustomSize ? 'expanded' : ''}}">▼</view>
+              </view>
               
-              <!-- 单位选择器 -->
-              <view class="unit-selector">
-                <picker 
-                  mode="selector" 
-                  range="{{['像素', '英寸', '厘米']}}"
-                  value="{{customUnit === 'px' ? 0 : customUnit === 'inch' ? 1 : 2}}"
-                  bindchange="onCustomUnitChange"
+              <view class="custom-content {{showCustomSize ? 'show' : ''}}">
+                <!-- 单位选择器 -->
+                <view class="unit-selector">
+                  <picker 
+                    mode="selector" 
+                    range="{{['像素', '英寸', '厘米']}}"
+                    value="{{customUnit === 'px' ? 0 : customUnit === 'inch' ? 1 : 2}}"
+                    bindchange="onCustomUnitChange"
+                  >
+                    <view class="unit-picker">
+                      <text class="unit-text">{{customUnit === 'px' ? '像素' : customUnit === 'inch' ? '英寸' : '厘米'}}</text>
+                      <text class="unit-arrow">▼</text>
+                    </view>
+                  </picker>
+                </view>
+                
+                <view class="input-group">
+                  <input 
+                    class="input" 
+                    type="digit" 
+                    placeholder="宽度" 
+                    value="{{customWidth}}"
+                    bindinput="onCustomWidthInput"
+                  />
+                  <text class="input-separator">×</text>
+                  <input 
+                    class="input" 
+                    type="digit" 
+                    placeholder="高度" 
+                    value="{{customHeight}}"
+                    bindinput="onCustomHeightInput"
+                  />
+                  <text class="unit-label">{{customUnit}}</text>
+                </view>
+                <button 
+                  class="custom-btn {{selectedSize && selectedSize.name.indexOf('自定义') === 0 ? 'active' : ''}}"
+                  bindtap="useCustomSize"
                 >
-                  <view class="unit-picker">
-                    <text class="unit-text">{{customUnit === 'px' ? '像素' : customUnit === 'inch' ? '英寸' : '厘米'}}</text>
-                    <text class="unit-arrow">▼</text>
-                  </view>
-                </picker>
+                  使用自定义
+                </button>
               </view>
-              
-              <view class="input-group">
-                <input 
-                  class="input" 
-                  type="digit" 
-                  placeholder="宽度" 
-                  value="{{customWidth}}"
-                  bindinput="onCustomWidthInput"
-                />
-                <text class="input-separator">×</text>
-                <input 
-                  class="input" 
-                  type="digit" 
-                  placeholder="高度" 
-                  value="{{customHeight}}"
-                  bindinput="onCustomHeightInput"
-                />
-                <text class="unit-label">{{customUnit}}</text>
-              </view>
-              <button 
-                class="custom-btn {{selectedSize && selectedSize.name.indexOf('自定义') === 0 ? 'active' : ''}}"
-                bindtap="useCustomSize"
-              >
-                使用自定义
-              </button>
             </view>
           </view>
         </view>
@@ -190,6 +175,7 @@
             class="btn-success generate-btn"
             bindtap="generatePhoto"
             disabled="{{!selectedSize || generating}}"
+            wx:if="{{!generatedPhoto}}"
           >
             <text class="btn-icon">📸</text>
             生成证件照
@@ -204,6 +190,10 @@
               <text class="btn-icon">🔄</text>
               重新生成
             </button>
+            <button class="btn-default" bindtap="backToOriginal">
+              <text class="btn-icon">←</text>
+              返回原图
+            </button>
           </view>
           
           <button class="btn-default reset-btn" bindtap="resetApp">
@@ -212,7 +202,7 @@
           </button>
           
           <!-- 移动控制按钮 -->
-          <view class="control-buttons" wx:if="{{selectedSize}}">
+          <view class="control-buttons" wx:if="{{selectedSize && !generatedPhoto}}">
             <button class="btn-default" bindtap="resetImagePosition">
               <text class="btn-icon">🔄</text>
               重置图片位置

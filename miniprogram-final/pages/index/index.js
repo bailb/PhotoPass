@@ -25,7 +25,7 @@ Page({
     imageScalePercent: 100, // 缩放百分比显示
     minScale: 0.5, // 最小缩放比例
     maxScale: 3.0, // 最大缩放比例
-    scaleHandlePosition: 150, // 比例尺滑块位置（像素）
+    scaleHandlePosition: 150, // 比例尺滑块位置（像素）- 300px轨道的正中间
     isScaling: false, // 是否正在拖拽比例尺
     scaleStartX: 0, // 比例尺拖拽开始X坐标
     photoSizes: [
@@ -43,7 +43,9 @@ Page({
     imagePositionY: 0, // 图片Y位置偏移
     isImageDragging: false, // 是否正在拖拽图片
     imageDragStartX: 0, // 图片拖拽开始X坐标
-    imageDragStartY: 0 // 图片拖拽开始Y坐标
+    imageDragStartY: 0, // 图片拖拽开始Y坐标
+    // 🎯 新增：自定义尺寸折叠状态
+    showCustomSize: false // 是否显示自定义尺寸内容
   },
 
   onLoad() {
@@ -727,25 +729,20 @@ Page({
         fileType: 'png',
         quality: 1.0,
         success: (res) => {
-          // 🎯 修复：生成成功后恢复图片状态
-          const currentImageScale = this.data.imageScale
-          const currentImageScalePercent = this.data.imageScalePercent
-          const currentScaleHandlePosition = this.data.scaleHandlePosition
-          
-          console.log('🎯 生成成功后恢复图片状态:', {
-            imageScale: currentImageScale,
-            imageScalePercent: currentImageScalePercent,
-            scaleHandlePosition: currentScaleHandlePosition
-          })
+          console.log('🎯 证件照生成成功:', res.tempFilePath)
           
           this.setData({
             generatedPhoto: res.tempFilePath,
             generating: false,
-            // 🎯 修复：确保图片缩放状态不被重置
-            imageScale: currentImageScale,
-            imageScalePercent: currentImageScalePercent,
-            scaleHandlePosition: currentScaleHandlePosition
+            // 🎯 优化：生成证件照后重置图片变换状态，因为生成的图片已经是最终尺寸
+            imageScale: 1.0,
+            imageScalePercent: 100,
+            scaleHandlePosition: 150,
+            imagePositionX: 0,
+            imagePositionY: 0
           })
+          
+          // 🎯 简化：生成证件照后直接显示
           wx.showToast({
             title: `${selectedSize.name}证件照生成成功！`,
             icon: 'success'
@@ -757,17 +754,8 @@ Page({
             title: '导出图片失败',
             icon: 'error'
           })
-          // 🎯 修复：生成失败后也要恢复图片状态
-          const currentImageScale = this.data.imageScale
-          const currentImageScalePercent = this.data.imageScalePercent
-          const currentScaleHandlePosition = this.data.scaleHandlePosition
-          
           this.setData({ 
-            generating: false,
-            // 🎯 修复：确保图片缩放状态不被重置
-            imageScale: currentImageScale,
-            imageScalePercent: currentImageScalePercent,
-            scaleHandlePosition: currentScaleHandlePosition
+            generating: false
           })
         }
       }, this)
@@ -1122,6 +1110,25 @@ Page({
     })
   },
 
+  // 🎯 新增：切换自定义尺寸折叠状态
+  toggleCustomSize() {
+    this.setData({
+      showCustomSize: !this.data.showCustomSize
+    })
+  },
+
+  // 🎯 新增：返回原始图片
+  backToOriginal() {
+    this.setData({
+      generatedPhoto: ''
+    })
+    wx.showToast({
+      title: '已返回原图',
+      icon: 'success'
+    })
+  },
+
+
   // 重置应用
   resetApp() {
     this.setData({
@@ -1142,7 +1149,9 @@ Page({
       // 🎯 新增：重置图片位置
       imagePositionX: 0,
       imagePositionY: 0,
-      isImageDragging: false
+      isImageDragging: false,
+      // 🎯 新增：重置自定义尺寸折叠状态
+      showCustomSize: false
     })
     wx.showToast({
       title: '已重置',
